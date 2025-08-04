@@ -7,6 +7,7 @@ const bcript = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { hash } = require('crypto');
 const user = require('./models/user');
+const post = require('./models/post');
 
 
 // middleware
@@ -14,7 +15,6 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended : true}));
 app.use(cookieParser());
-
 
 // routes
 app.get('/', (req, res) => {
@@ -31,11 +31,37 @@ app.get('/profile', isLoggedIn, async (req, res) => {
     let {email} = req.user.email;
     let user = await userModel.findOne(email).populate("posts");
     res.render('profile', {user});
+})
 
+// like feature
+app.get('/like/:id', isLoggedIn, async (req, res) => {
+    let post = await postModel.findOne({_id : req.params.id}).populate("user");
+
+    if(post.likes.indexOf(req.user.userid) === -1){
+        post.likes.push(req.user.userid);
+    }
+    else{
+        post.likes.splice(post.likes.indexOf(req.user.userid, 1))
+    }
+
+    await post.save();
+    res.redirect("/profile");
+});
+
+// edit feature
+app.get('/edit/:id', isLoggedIn, async(req, res) => {
+    let post = await postModel.findOne({_id : req.params.id}).populate("user");
+
+    res.render('edit', {post})
+})
+
+// update content
+app.post('/update/:id', isLoggedIn, async (req, res) =>{
+    let post = await postModel.findOneAndUpdate({_id : req.params.id}, {content : req.body.content})
+    res.redirect('/profile')
 })
 
 // post creating
-
 app.post('/post', isLoggedIn, async (req, res) => {
     let user = await userModel.findOne({email : req.user.email})
     let {content} = req.body
