@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
+const { type } = require('os');
 const { ref } = require('process');
 
-mongoose.connect(`mongodb://127.0.0.1:27017/post-creater`);
+mongoose.connect(`mongodb://127.0.0.1:27017/post-creator`);
 
 const userSchema = mongoose.Schema({
     username : String,
@@ -9,6 +10,10 @@ const userSchema = mongoose.Schema({
     age : Number,
     email : String,
     password : String,
+    profilepic : {
+        type : String,
+        default : "default.jpg"
+    },
     posts : [
         {
             type : mongoose.Schema.Types.ObjectId,

@@ -2,18 +2,18 @@ const express = require('express');
 const app = express();
 const userModel = require('./models/user');
 const postModel = require('./models/post');
+const path = require('path');
 const cookieParser = require('cookie-parser');
 const bcript = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { hash } = require('crypto');
-const user = require('./models/user');
-const post = require('./models/post');
-
+const crypto = require('crypto');
+const upload = require('./config/multerconfig');
 
 // middleware
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended : true}));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
 // routes
@@ -28,8 +28,8 @@ app.get('/login', (req, res) => {
 
 // profile
 app.get('/profile', isLoggedIn, async (req, res) => {
-    let {email} = req.user.email;
-    let user = await userModel.findOne(email).populate("posts");
+    let email = req.user.email;
+    let user = await userModel.findOne({email}).populate("posts");
     res.render('profile', {user});
 })
 
@@ -54,6 +54,19 @@ app.get('/edit/:id', isLoggedIn, async(req, res) => {
 
     res.render('edit', {post})
 })
+
+// profile pic upload
+app.get('/profile/upload', (req,res)=> {
+    res.render("profileupload");
+});
+
+// post route for upload profile pic
+app.post('/upload', isLoggedIn ,upload.single("image") , async (req, res) => {
+    let user = await userModel.findOne({email : req.user.email});
+    user.profilepic = req.file.filename;
+    await user.save();
+    res.redirect('/profile')
+});
 
 // update content
 app.post('/update/:id', isLoggedIn, async (req, res) =>{
